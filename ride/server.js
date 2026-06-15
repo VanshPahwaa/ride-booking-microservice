@@ -4,6 +4,8 @@ const app = require('./app');
 const server = http.createServer(app);
 
 
-server.listen(3003, () => {
-    console.log('ride service is running on port 3003');
+const PORT = process.env.PORT || 3003;
+
+server.listen(PORT, () => {
+    console.log(`ride service is running on port ${PORT}`);
 })

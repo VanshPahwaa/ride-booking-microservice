@@ -1,0 +1,52 @@
+services:
+
+  gateway:
+    build: ./gateway
+    container_name: gateway
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./gateway/.env.docker
+    restart: on-failure
+    depends_on:
+      - user
+      - captain
+      - ride
+    networks:
+      - ride-network
+
+  user:
+    build: ./user
+    container_name: user
+    ports:
+      - "3001:3001"
+    env_file:
+      - ./user/.env.docker
+    restart: on-failure
+    networks:
+      - ride-network
+
+  captain:
+    build: ./captain
+    container_name: captain
+    ports:
+      - "3002:3002"
+    env_file:
+      - ./captain/.env.docker
+    restart: on-failure
+    networks:
+      - ride-network
+
+  ride:
+    build: ./ride
+    container_name: ride
+    ports:
+      - "3003:3003"
+    env_file:
+      - ./ride/.env.docker
+    restart: on-failure
+    networks:
+      - ride-network
+
+networks:
+  ride-network:

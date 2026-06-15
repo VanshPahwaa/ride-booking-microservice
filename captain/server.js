@@ -7,6 +7,8 @@ const server = http.createServer(app);
 
 
 
-server.listen(3002, () => {
-    console.log('captain service is running on port 3002');
+const PORT = process.env.PORT || 3002;
+
+server.listen(PORT, () => {
+    console.log(`captain service is running on port ${PORT}`);
 });
