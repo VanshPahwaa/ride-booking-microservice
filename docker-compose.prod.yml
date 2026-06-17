@@ -1,0 +1,13 @@
+services:
+  gateway:
+    env_file:
+      - ./gateway/.env.docker.production
+  user:
+    env_file:
+      - ./user/.env.docker.production
+  captain:
+    env_file:
+      - ./captain/.env.docker.production
+  ride:
+    env_file:
+      - ./ride/.env.docker.production

@@ -1,0 +1,13 @@
+services:
+  gateway:
+    env_file:
+      - ./gateway/.env.docker.development
+  user:
+    env_file:
+      - ./user/.env.docker.development
+  captain:
+    env_file:
+      - ./captain/.env.docker.development
+  ride:
+    env_file:
+      - ./ride/.env.docker.development

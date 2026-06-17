@@ -88,7 +88,6 @@ module.exports.profile = async (req, res) => {
 module.exports.acceptedRide = async (req, res) => {
 
     const timeout = setTimeout(() => {
-
         if (!res.headersSent) {
             res.status(204).send();
         }
@@ -98,7 +97,7 @@ module.exports.acceptedRide = async (req, res) => {
     rideEventEmitter.once('ride-accepted', (data) => {
 
         clearTimeout(timeout);
-        console.log("sending data", data);
+        console.log("sending data", data)
 
         if (!res.headersSent) {
             res.send(data);

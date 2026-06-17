@@ -15,7 +15,7 @@ async function subscribeToQueue(queueName, callback) {
     if (!channel) await connect();
     await channel.assertQueue(queueName);
     channel.consume(queueName, (message) => {
-        console.log("queue", message.content.toString());
+        console.log("message that will be sent from queue " + queueName, message.content.toString());
         callback(message.content.toString());
         channel.ack(message);
     });

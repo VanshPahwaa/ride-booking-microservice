@@ -5,8 +5,7 @@ services:
     container_name: gateway
     ports:
       - "3000:3000"
-    env_file:
-      - ./gateway/.env.docker
+
     restart: on-failure
     depends_on:
       - user
@@ -20,8 +19,7 @@ services:
     container_name: user
     ports:
       - "3001:3001"
-    env_file:
-      - ./user/.env.docker
+
     restart: on-failure
     networks:
       - ride-network
@@ -31,8 +29,7 @@ services:
     container_name: captain
     ports:
       - "3002:3002"
-    env_file:
-      - ./captain/.env.docker
+
     restart: on-failure
     networks:
       - ride-network
@@ -42,11 +39,25 @@ services:
     container_name: ride
     ports:
       - "3003:3003"
-    env_file:
-      - ./ride/.env.docker
+
     restart: on-failure
+    networks:
+      - ride-network
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    restart: on-failure
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
     networks:
       - ride-network
 
 networks:
   ride-network:
+
+volumes:
+  rabbitmq-data:
