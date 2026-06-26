@@ -7,7 +7,7 @@ module.exports.userAuth = async (req, res, next) => {
     try {
 
         // console.log("req", req);
-        const token = req.cookies.token || (req.headers.authorization && req.headers.authorization.split(' ')[1]);
+        const token = req.headers.authorization?.split(' ')[1]; // req.cookies.token || (req.headers.authorization && req.headers.authorization.split(' ')[1]);
 
         if (!token) {
             return res.status(401).json({ message: 'Unauthorized' });
