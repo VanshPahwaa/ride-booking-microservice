@@ -57,7 +57,7 @@ module.exports.login = async (req, res) => {
 
         // res.cookie('token', token);
 
-        res.send({ message: "User logged in successfully", token, user });
+        res.send({ message: "user logged in successfully", token, user });
 
     } catch (error) {
 
