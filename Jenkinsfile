@@ -1,7 +1,7 @@
 pipeline {
     agent any
 
-    Options{
+    options{
         skipDefaultCheckout(true)
     }
 
@@ -22,10 +22,10 @@ pipeline {
         stage('Copy Secret Files') {
             steps {
                 withCredentials([
-                    file(credentialsId: 'user-env', variable: 'USER_DOCKER_DEVELOPMENT'),
-                    file(credentialsId: 'captain-env', variable: 'CAPTAIN_DOCKER_DEVELOPMENT'),
-                    file(credentialsId: 'ride-env', variable: 'RIDE_DOCKER_DEVELOPMENT'),
-                    file(credentialsId: 'gateway-env', variable: 'GATEWAY_DOCKER_DEVELOPMENT')
+                    file(credentialsId: 'USER_DOCKER_DEVELOPMENT', variable: 'USER_DOCKER_DEVELOPMENT'),
+                    file(credentialsId: 'CAPTAIN_DOCKER_DEVELOPMENT', variable: 'CAPTAIN_DOCKER_DEVELOPMENT'),
+                    file(credentialsId: 'RIDE_DOCKER_DEVELOPMENT', variable: 'RIDE_DOCKER_DEVELOPMENT'),
+                    file(credentialsId: 'GATEWAY_DOCKER_DEVELOPMENT', variable: 'GATEWAY_DOCKER_DEVELOPMENT')
                 ]) {
                     sh '''
                         set -e
