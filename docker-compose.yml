@@ -58,8 +58,6 @@ services:
       - "5672:5672"
       - "15672:15672"
     restart: on-failure
-    depends_on:
-      - rabbitmq
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
     networks:
