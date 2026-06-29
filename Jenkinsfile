@@ -1,7 +1,23 @@
 pipeline {
     agent any
 
+    Options{
+        skipDefaultCheckout(true)
+    }
+
     stages {
+
+        stage("Clean WS"){
+            steps{
+                cleanWs()
+            }
+        }
+
+        stage("checkout"){
+            steps{
+                checkout scm
+            }
+        }
 
         stage('Copy Secret Files') {
             steps {
