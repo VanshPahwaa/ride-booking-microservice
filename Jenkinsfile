@@ -1,6 +1,18 @@
 pipeline {
     agent any
 
+    parameters{
+        choice(
+            name:"ENV",
+            choices:["dev","staging","production"],
+            description:"Select Environment"
+        )
+    }
+
+    environment{
+        ENVIRONMENT="${params.ENV}"
+    }
+
     options{
         skipDefaultCheckout(true)
     }
@@ -9,6 +21,7 @@ pipeline {
 
         stage("Clean WS"){
             steps{
+                echo "cleaning workspace"
                 cleanWs()
             }
         }
@@ -39,6 +52,17 @@ pipeline {
             }
         }
 
+        stage("Testing"){
+            when{
+                expression{
+                    env.ENVIRONMENT=="production"
+                }
+            }
+            steps{
+                echo "Running for envorinment ${ENVIRONMENT}"
+            }
+        }
+
         stage('Deploy Containers') {
             steps {
                 sh '''
@@ -49,9 +73,12 @@ pipeline {
 
                     docker ps
                 '''
+                echo "runniing for envorinment ${ENVIRONMENT}"
             }
         }
     }
+
+    
 
     post {
         success {
