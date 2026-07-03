@@ -1,96 +1,129 @@
 pipeline {
-    agent any
+    agent none
 
-    parameters{
-        choice(
-            name:"ENV",
-            choices:["dev","staging","production"],
-            description:"Select Environment"
-        )
-    }
-
-    environment{
-        ENVIRONMENT="${params.ENV}"
-    }
-
-    options{
+    options {
         skipDefaultCheckout(true)
     }
 
+
+
     stages {
 
-        stage("Clean WS"){
-            steps{
-                echo "cleaning workspace"
+        stage("Clean Workspace") {
+            agent any
+            steps {
+                echo "Cleaning workspace..."
                 cleanWs()
             }
         }
 
-        stage("checkout"){
-            steps{
+        stage("Checkout") {
+            agent any
+            steps {
+                echo "Checking out source code..."
                 checkout scm
             }
         }
 
-        stage('Copy Secret Files') {
+        stage("Copy Secret Files") {
+            agent any
             steps {
                 withCredentials([
-                    file(credentialsId: 'USER_DOCKER_DEVELOPMENT', variable: 'USER_DOCKER_DEVELOPMENT'),
-                    file(credentialsId: 'CAPTAIN_DOCKER_DEVELOPMENT', variable: 'CAPTAIN_DOCKER_DEVELOPMENT'),
-                    file(credentialsId: 'RIDE_DOCKER_DEVELOPMENT', variable: 'RIDE_DOCKER_DEVELOPMENT'),
-                    file(credentialsId: 'GATEWAY_DOCKER_DEVELOPMENT', variable: 'GATEWAY_DOCKER_DEVELOPMENT')
+                    file(credentialsId: 'USER_DOCKER_PRODUCTION', variable: 'USER_DOCKER_PRODUCTION'),
+                    file(credentialsId: 'CAPTAIN_DOCKER_PRODUCTION', variable: 'CAPTAIN_DOCKER_PRODUCTION'),
+                    file(credentialsId: 'RIDE_DOCKER_PRODUCTION', variable: 'RIDE_DOCKER_PRODUCTION'),
+                    file(credentialsId: 'GATEWAY_DOCKER_PRODUCTION', variable: 'GATEWAY_DOCKER_PRODUCTION')
                 ]) {
                     sh '''
                         set -e
 
-                        cp "$USER_DOCKER_DEVELOPMENT" user/.env.docker.development
-                        cp "$CAPTAIN_DOCKER_DEVELOPMENT" captain/.env.docker.development
-                        cp "$RIDE_DOCKER_DEVELOPMENT" ride/.env.docker.development
-                        cp "$GATEWAY_DOCKER_DEVELOPMENT" gateway/.env.docker.development
+                        cp "$USER_DOCKER_PRODUCTION" user/.env.docker.production
+                        cp "$CAPTAIN_DOCKER_PRODUCTION" captain/.env.docker.production
+                        cp "$RIDE_DOCKER_PRODUCTION" ride/.env.docker.production
+                        cp "$GATEWAY_DOCKER_PRODUCTION" gateway/.env.docker.production
                     '''
                 }
             }
         }
 
-        stage("Testing"){
-            when{
-                expression{
-                    env.ENVIRONMENT=="production"
+        stage("Build & Test") {
+            agent {
+                docker {
+                    image "node:22"
                 }
             }
-            steps{
-                echo "Running for envorinment ${ENVIRONMENT}"
+
+            steps {
+                sh "node -v"
+
+                // Example (modify according to your project structure)
+
+                dir("user") {
+                    sh "npm install"
+                    // sh "npm test"
+                }
+
+                dir("captain") {
+                    sh "npm install"
+                    // sh "npm test"
+                }
+
+                dir("ride") {
+                    sh "npm install"
+                    // sh "npm test"
+                }
+
+                dir("gateway") {
+                    sh "npm install"
+                    // sh "npm test"
+                }
             }
         }
 
-        stage('Deploy Containers') {
+        stage("Deploy") {
+            agent any
+
             steps {
-                sh '''
-                    set -ex
+                sshagent(["APP_SERVER_KEY"]) {
 
-                    docker compose down
-                    docker compose up --build -d
+                    sh """
+                    ssh -o StrictHostKeyChecking=no ubuntu@${RIDE_BOOKING_SERVER_IP} '
 
-                    docker ps
-                '''
-                echo "runniing for envorinment ${ENVIRONMENT}"
+                        cd ${APP_FILE_PATH}
+
+                        git pull origin main
+
+                        docker compose \
+                            -f docker-compose.yml \
+                            -f docker-compose.prod.yml \
+                            down
+
+                        docker compose \
+                            -f docker-compose.yml \
+                            -f docker-compose.prod.yml \
+                            up -d --build
+
+                        docker ps
+
+                    '
+                    """
+                }
             }
         }
     }
 
-    
-
     post {
+
         success {
-            echo ' Deployment completed successfully.'
+            echo "Deployment completed successfully."
         }
 
         failure {
-            echo ' Deployment failed.'
+            echo "Deployment failed."
         }
 
         always {
-            echo 'Pipeline finished.'
+            echo "Pipeline finished."
         }
     }
 }
