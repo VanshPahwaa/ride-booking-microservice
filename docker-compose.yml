@@ -6,7 +6,7 @@ services:
     ports:
       - "3000:3000"
 
-    # restart: on-failure
+    restart: on-failure
     depends_on:
       - user
       - captain
@@ -20,7 +20,7 @@ services:
     ports:
       - "3001:3001"
 
-    # restart: on-failure
+    restart: on-failure
     depends_on:
       - rabbitmq
       
