@@ -2,7 +2,7 @@ const captainModel = require('../models/captain.model');
 const blacklisttokenModel = require('../models/blacklisttoken.model');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { subscribeToQueue } = require('../service/rabbit')
+const { subscribeToExchange } = require('../service/rabbit')
 
 const pendingRequests = [];
 
@@ -68,6 +68,9 @@ module.exports.login = async (req, res) => {
 module.exports.logout = async (req, res) => {
     try {
         const token = req.headers.authorization?.split(' ')[1]; // req.cookies.token;
+        if (!token) {
+            return res.status(400).json({ message: 'Token not provided' });
+        }
         await blacklisttokenModel.create({ token });
         // res.clearCookie('token');
         res.send({ message: 'captain logged out successfully' });
@@ -77,6 +80,8 @@ module.exports.logout = async (req, res) => {
 }
 
 module.exports.profile = async (req, res) => {
+
+    
     try {
         res.send(req.captain);
     } catch (error) {
@@ -98,23 +103,33 @@ module.exports.toggleAvailability = async (req, res) => {
 }
 
 module.exports.waitForNewRide = async (req, res) => {
+    // Add the response object to the pendingRequests array
+    pendingRequests.push(res);
+
+    // Remove from array when client disconnects or times out
+    req.on('close', () => {
+        const index = pendingRequests.indexOf(res);
+        if (index !== -1) {
+            pendingRequests.splice(index, 1);
+        }
+    });
+
     // Set timeout for long polling (e.g., 30 seconds)
     req.setTimeout(30000, () => {
         res.status(204).end(); // No Content
     });
-
-    // Add the response object to the pendingRequests array
-    pendingRequests.push(res);
 };
 
-subscribeToQueue("new-ride", (data) => {
-    const rideData = JSON.parse(data);
+subscribeToExchange('ride_events', 'ride.new', 'captain_new_ride_queue', (msg) => {
+    const rideData = JSON.parse(msg);
 
-    console.log("sending ride data to these requests", rideData, pendingRequests);
+    console.log("sending ride data to these requests", rideData, pendingRequests.length);
     
     // Send the new ride data to all pending requests
     pendingRequests.forEach(res => {
-        res.json(rideData);
+        if (!res.headersSent) {
+            res.json(rideData);
+        }
     });
 
     // Clear the pending requests

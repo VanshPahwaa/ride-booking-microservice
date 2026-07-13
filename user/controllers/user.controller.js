@@ -2,7 +2,7 @@ const userModel = require('../models/user.model');
 const blacklisttokenModel = require('../models/blacklisttoken.model');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { subscribeToQueue } = require('../service/rabbit')
+const { subscribeToExchange } = require('../service/rabbit')
 const EventEmitter = require('events');
 const rideEventEmitter = new EventEmitter();
 
@@ -69,6 +69,9 @@ module.exports.login = async (req, res) => {
 module.exports.logout = async (req, res) => {
     try {
         const token = req.headers.authorization?.split(' ')[1]; // req.cookies.token;
+        if (!token) {
+            return res.status(400).json({ message: 'Token not provided' });
+        }
         await blacklisttokenModel.create({ token });
         // res.clearCookie('token');
         res.send({ message: 'User logged out successfully' });
@@ -86,28 +89,39 @@ module.exports.profile = async (req, res) => {
 }
 
 module.exports.acceptedRide = async (req, res) => {
+    const { rideId } = req.query;
 
-    const timeout = setTimeout(() => {
-        if (!res.headersSent) {
-            res.status(204).send();
-        }
+    if (!rideId) {
+        return res.status(400).json({ message: 'rideId is required' });
+    }
 
-    }, 30000);
+    const eventName = `ride-accepted-${rideId}`;
 
-    rideEventEmitter.once('ride-accepted', (data) => {
-
+    const listener = (data) => {
         clearTimeout(timeout);
         console.log("sending data", data)
-
         if (!res.headersSent) {
             res.send(data);
         }
+    };
 
+    rideEventEmitter.once(eventName, listener);
+
+    const timeout = setTimeout(() => {
+        rideEventEmitter.removeListener(eventName, listener);
+        if (!res.headersSent) {
+            res.status(204).send();
+        }
+}, 30000)
+    
+    // Also handle client closing connection early
+    req.on('close', () => {
+        clearTimeout(timeout);
+        rideEventEmitter.removeListener(eventName, listener);
     });
-
 }
 
-subscribeToQueue('ride-accepted', async (msg) => {
+subscribeToExchange('ride_events', 'ride.accepted', 'user_ride_accepted_queue', async (msg) => {
     const data = JSON.parse(msg);
-    rideEventEmitter.emit('ride-accepted', data);
+    rideEventEmitter.emit(`ride-accepted-${data._id}`, data);
 });
